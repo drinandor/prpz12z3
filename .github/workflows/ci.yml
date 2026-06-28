@@ -10,7 +10,6 @@ jobs:
   ci-build-and-test:
     runs-on: ubuntu-latest
 
-    # Временные сервисы (контейнеры), которые запустятся в облаке GitHub для тестов
     services:
       postgres:
         image: postgres:15
@@ -37,38 +36,35 @@ jobs:
           --health-retries 5
 
     steps:
-      # 1. Скачивание исходного кода проекта
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2. Творческое задание: Проверка Dockerfile линтером Hadolint
+      # Указали путь до Dockerfile внутри папки 3
       - name: Lint Dockerfile (Hadolint)
         uses: hadolint/hadolint-action@v3.1.0
         with:
-          dockerfile: Dockerfile
-          ignore: DL3008 # Игнорировать предупреждение о версиях apt-пакетов
+          dockerfile: 3/Dockerfile
+          ignore: DL3008
 
-      # 3. Установка Python
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-size: '3.10'
+          python-version: '3.10'
 
-      # 4. Установка зависимостей проекта и утилит тестирования
+      # Указали путь до requirements.txt внутри папки 3
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install flake8 pytest
-          pip install -r requirements.txt
+          pip install -r 3/requirements.txt
 
-      # 5. Запуск линтера Flake8 для проверки стиля кода Python
+      # Указали путь до файлов проекта для линтера
       - name: Run Linter (Flake8)
         run: |
-          # Игнорируем ограничение длины строки E501 для простоты
-          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+          flake8 3/ --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 3/ --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
-      # 6. Запуск юнит-тестов (используя запущенные сервисы postgres и redis)
+      # Указали запуск тестов внутри папки 3
       - name: Run Unit Tests (Pytest)
         env:
           POSTGRES_USER: db_user
@@ -79,14 +75,13 @@ jobs:
           REDIS_HOST: localhost
           REDIS_PORT: 6379
         run: |
-          pytest test_app.py -v
+          pytest 3/test_app.py -v
 
-      # 7. Сборка Docker-образа приложения
+      # Указали контекст сборки образа (папка ./3)
       - name: Build Docker Image
         run: |
-          docker build -t flask-app:latest .
+          docker build -t flask-app:latest ./3
 
-      # 8. Творческое задание: Отправка уведомления в Telegram при УСПЕШНОЙ сборке
       - name: Send Telegram Success Notification
         if: success()
         uses: appleboy/telegram-action@master
@@ -96,12 +91,11 @@ jobs:
           message: |
             ✅ CI Pipeline SUCCEEDED!
             ---------------------------
-            Project: Flask Visitor Counter
+            Project: Flask Visitor Counter (Task 3)
             Commit: ${{ github.sha }}
             Branch: ${{ github.ref_name }}
             Author: ${{ github.actor }}
 
-      # 9. Творческое задание: Отправка уведомления в Telegram при ПРОВАЛЕ сборки
       - name: Send Telegram Failure Notification
         if: failure()
         uses: appleboy/telegram-action@master
@@ -111,7 +105,7 @@ jobs:
           message: |
             ❌ CI Pipeline FAILED!
             ---------------------------
-            Project: Flask Visitor Counter
+            Project: Flask Visitor Counter (Task 3)
             Commit: ${{ github.sha }}
             Branch: ${{ github.ref_name }}
             Author: ${{ github.actor }}
