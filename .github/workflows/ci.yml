@@ -39,11 +39,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Указали путь до Dockerfile внутри папки 3
+      # Теперь пути чистые (без 3/), так как файлы лежат в корне репозитория
       - name: Lint Dockerfile (Hadolint)
         uses: hadolint/hadolint-action@v3.1.0
         with:
-          dockerfile: 3/Dockerfile
+          dockerfile: Dockerfile
           ignore: DL3008
 
       - name: Set up Python
@@ -51,20 +51,17 @@ jobs:
         with:
           python-version: '3.10'
 
-      # Указали путь до requirements.txt внутри папки 3
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install flake8 pytest
-          pip install -r 3/requirements.txt
+          pip install -r requirements.txt
 
-      # Указали путь до файлов проекта для линтера
       - name: Run Linter (Flake8)
         run: |
-          flake8 3/ --count --select=E9,F63,F7,F82 --show-source --statistics
-          flake8 3/ --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
-      # Указали запуск тестов внутри папки 3
       - name: Run Unit Tests (Pytest)
         env:
           POSTGRES_USER: db_user
@@ -75,12 +72,11 @@ jobs:
           REDIS_HOST: localhost
           REDIS_PORT: 6379
         run: |
-          pytest 3/test_app.py -v
+          pytest test_app.py -v
 
-      # Указали контекст сборки образа (папка ./3)
       - name: Build Docker Image
         run: |
-          docker build -t flask-app:latest ./3
+          docker build -t flask-app:latest .
 
       - name: Send Telegram Success Notification
         if: success()
