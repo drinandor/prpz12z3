@@ -1,6 +1,24 @@
 import pytest
 from app import app, get_db_connection, cache
 
+@pytest.fixture(autouse=True)
+def setup_database():
+    """Автоматическое создание таблицы visits в тестовой БД перед тестами"""
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS visits (
+            id SERIAL PRIMARY KEY,
+            count INT NOT NULL
+        );
+    """)
+    cur.execute("SELECT COUNT(*) FROM visits;")
+    if cur.fetchone()[0] == 0:
+        cur.execute("INSERT INTO visits (id, count) VALUES (1, 0);")
+    conn.commit()
+    cur.close()
+    conn.close()
+
 @pytest.fixture
 def client():
     app.config['TESTING'] = True
